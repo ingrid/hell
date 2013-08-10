@@ -48,7 +48,18 @@ node.prototype.render = function(ctx, cam){
   ctx.strokeRect(this.x, this.y, this.width, this.height);
 };
 
-node.prototype.MAX_ALLOWED = 1;
+node.prototype.flush = function(){
+  if (this.children.length > 0){
+    this.children.length = [];
+  }
+  if (this.nodes.length > 0){
+    for (n in this.nodes){
+      this.nodes[n].flush();
+    }
+  }
+};
+
+node.prototype.MAX_ALLOWED = 2;
 
 var quadTree = function(width, height){
   var n = new node(0, 0, width - 1, height - 1);
@@ -57,7 +68,9 @@ var quadTree = function(width, height){
 
 node.prototype.build = function(){
   if (this.children.length > this.MAX_ALLOWED){
-    this.split();
+    if (this.nodes.length === 0){
+      this.split();
+    }
     var w = Math.floor(this.width / 2);
     var h = Math.floor(this.height / 2);
     for (i in this.children){
@@ -85,6 +98,13 @@ node.prototype.build = function(){
   }
 };
 
+/** /
+window.setTimeout(function(){
+  console.log = function(){
+  };
+}, 8000);
+/**/
+
 node.prototype.calc = function(s){
   // Returns an array of nodes to collide s against, in case s called on a
   // boundry and overlaps multiple nodes.
@@ -100,8 +120,19 @@ node.prototype.calc = function(s){
     }
     return ret;
   } else {
-    return [this];
+    return this.children;
   }
+};
+
+var spawner = function(){
+  this.children = [];
+  var makeShot = function(x, y){
+    var s = new jam.Sprite(x, y);
+    s.update = jam.extend(s.update, function(elapsed){
+
+    });
+    game.add(s);
+  };
 };
 
 var initialize = function(){
@@ -112,9 +143,108 @@ var initialize = function(){
   game.add(p);
 
   var qt = quadTree(640, 480);
+
   game.add(qt);
 
   var shots = [];
+
+  p.health = {};
+  p.health.max = 10;
+  p.health.val = p.health.max;
+  p.health.container = new jam.Sprite(20, 20);
+
+  var dig = 10;
+  var hei = 20
+
+  var con_can = document.createElement("canvas");
+  con_can.width = p.health.max * dig;
+  con_can.height = hei;
+  var con_ctx = con_can.getContext("2d");
+  con_ctx.lineWidth = 1;
+  con_ctx.strokeStyle = "rgba(255,0,0,0.6)";
+  con_ctx.strokeRect(0, 0, p.health.max * dig, hei);
+
+  p.health.con = new jam.Sprite(520, 20);
+  p.health.con.image = con_can;
+  p.health.con.width = con_can.width;
+  p.health.con.height = con_can.height;
+  game.add(p.health.con);
+
+  var bar_can = document.createElement("canvas");
+  bar_can.width = dig;
+  bar_can.height = hei;
+  var bar_ctx = bar_can.getContext("2d");
+  bar_ctx.lineWidth = 1;
+  bar_ctx.fillStyle = "rgba(0,255,255,0.5)";
+  bar_ctx.fillRect(0, 0, dig, hei);
+
+  p.health.bars = [];
+
+  var x = p.health.con.x;
+  var y = p.health.con.y;
+
+  var i;
+  for (i = 0; i < p.health.max; i ++){
+    var b = new jam.Sprite(x, y);
+    x += dig;
+    b.image = bar_can;
+    b.width = bar_can.width;
+    b.height = bar_can.height;
+    game.add(b);
+    p.health.bars[i] = b;
+  }
+
+  p.hit = function(dmg){
+    var i;
+    for (i = 0; i < dmg; i++){
+      p.health.val -= 1;
+      p.health.bars[p.health.val].visible = false;
+      if (p.health.val > 1){
+        console.log("DIE");
+      }
+
+    }
+  };
+
+  p.update = jam.extend(p.update, function(elapsed){
+    qt.flush();
+    qt.children = shots;
+    qt.build();
+    var pcolls = qt.calc(p);
+    var remove
+    for (c in pcolls){
+      if (p.overlaps(pcolls[c])){
+        p.hit(1);
+        game.remove(pcolls[c]);
+        shots.splice(shots.indexOf(pcolls[c], 1));
+      }
+    }
+
+    p.speed = 200;
+
+    p.velocity.x = 0;
+    p.velocity.y = 0;
+
+    if(jam.Input.buttonDown("LEFT")){
+	  p.velocity.x = -p.speed;
+	  //p.playAnimation(p.anim_run);
+	  //p.facing = jam.Sprite.LEFT;
+	} else if(jam.Input.buttonDown("RIGHT")){
+	  p.velocity.x = p.speed
+      //p.playAnimation(p.anim_run);
+	  //p.facing = jam.Sprite.RIGHT;
+	} else if (jam.Input.buttonDown("UP")){
+	  p.velocity.y = -p.speed;
+	  //p.playAnimation(p.anim_up);
+	} else if (jam.Input.buttonDown("DOWN")){
+	  p.velocity.y = p.speed;
+	  //p.playAnimation(p.anim_down);
+    } else{
+	  //p.playAnimation(p.anim_idle);
+    }
+
+  });
+
   var makeShot = function(x, y){
     var s = new jam.Sprite(x, y);
     s.setImage("data/shot.png");
@@ -127,12 +257,6 @@ var initialize = function(){
   makeShot(100, 90);
   makeShot(100, 80);
   makeShot(20, 20);
-
-  qt.children = shots;
-  qt.build();
-  var pcolls = qt.calc(p);
-
-  console.log(pcolls);
 
   jam.Debug.showBoundingBoxes = true;
   if (jam.Debug.showBoundingBoxes === true){

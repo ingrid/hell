@@ -17,7 +17,7 @@ window.onload = function(){
 jam.Game = function(width, height, parentElement){
 	var self = {};
 
-	self._canvas = document.createElement("canvas"); 
+	self._canvas = document.createElement("canvas");
 	self._canvas.style.position = "relative";
 	self._context = self._canvas.getContext("2d");
 	self._children = [];
@@ -26,7 +26,7 @@ jam.Game = function(width, height, parentElement){
 
 	// List of objects to be removed
 	self._remove = [];
-	
+
 	// Always keep the canvas in the middle of the parent element
 	onresize = function(){
 		self._canvas.style.left = (parentElement.clientWidth / 2 - width / 2) +"px";
@@ -46,7 +46,7 @@ jam.Game = function(width, height, parentElement){
 		size:jam.Vector(self.width, self.height),
 		follow:null,
 	};
-	self.bgColor = "rgb(255,255,255)";	
+	self.bgColor = "rgb(255,255,255)";
 
 	// If they didn't supply this argument, assume the doc body
 	// as the parent element for the canvas
@@ -73,7 +73,7 @@ jam.Game = function(width, height, parentElement){
 
 		self.elapsed = 1.0/self.fps;
 		self.time += self.elapsed;
-		
+
 		// Simplest possible follow code
 		if(self.camera.follow !== null)
 		{
@@ -116,11 +116,10 @@ jam.Game = function(width, height, parentElement){
 	self.run = function(){
 		self._tick();
 	};
-	
+
 	self.sortSprites = function(){
 		self._children.sort(function(a,b){ return b._layer - a._layer; });
 	}
 
 	return self;
 };
-
