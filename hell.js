@@ -66,6 +66,8 @@ var quadTree = function(width, height){
   return n;
 };
 
+var shots;
+
 node.prototype.build = function(){
   if (this.children.length > this.MAX_ALLOWED){
     if (this.nodes.length === 0){
@@ -98,7 +100,7 @@ node.prototype.build = function(){
   }
 };
 
-/** /
+/**/
 window.setTimeout(function(){
   console.log = function(){
   };
@@ -112,16 +114,19 @@ node.prototype.calc = function(s){
     return [];
   }
 
+
+  var ret = [];
+  if (this.children.length > 0){
+    ret = ret.concat(this.children);
+  }
+
   if (this.nodes.length > 0){
-    var ret = [];
     for (n in this.nodes){
       var t = this.nodes[n].calc(s);
       ret = ret.concat(t);
     }
-    return ret;
-  } else {
-    return this.children;
   }
+  return ret;
 };
 
 var spawner = function(){
@@ -146,7 +151,8 @@ var initialize = function(){
 
   game.add(qt);
 
-  var shots = [];
+  //  var shots = [];
+  shots = [];
 
   p.health = {};
   p.health.max = 10;
@@ -199,29 +205,28 @@ var initialize = function(){
     for (i = 0; i < dmg; i++){
       p.health.val -= 1;
       p.health.bars[p.health.val].visible = false;
-      if (p.health.val > 1){
+      if (p.health.val < 1){
         console.log("DIE");
       }
 
     }
   };
 
+  p.speed = 200;
+
   p.update = jam.extend(p.update, function(elapsed){
     qt.flush();
-    qt.children = shots;
+    qt.children = shots.slice(0);;
     qt.build();
     var pcolls = qt.calc(p);
-    var remove
     for (c in pcolls){
       if (p.overlaps(pcolls[c])){
         p.hit(1);
         game.remove(pcolls[c]);
+        console.log('!');
         shots.splice(shots.indexOf(pcolls[c], 1));
       }
     }
-
-    p.speed = 200;
-
     p.velocity.x = 0;
     p.velocity.y = 0;
 
@@ -242,7 +247,6 @@ var initialize = function(){
     } else{
 	  //p.playAnimation(p.anim_idle);
     }
-
   });
 
   var makeShot = function(x, y){
