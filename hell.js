@@ -223,8 +223,7 @@ var initialize = function(){
       if (p.overlaps(pcolls[c])){
         p.hit(1);
         game.remove(pcolls[c]);
-        console.log('!');
-        shots.splice(shots.indexOf(pcolls[c], 1));
+        shots.splice(shots.indexOf(pcolls[c]), 1);
       }
     }
     p.velocity.x = 0;
