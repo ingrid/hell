@@ -2,12 +2,12 @@ require.config({
   baseUrl:"./jam/",
 });
 
-require(["jam", "../lib/sylvester"], function(jam, syl) {
+require(["jam", "../lib/sylvester", "../qt", "../node"], function(jam, syl, quadTree, node) {
   jam.config({dataDir:"data/"});
 
   var game;
   var scene;
-
+  /** /
   var node = function(x, y, width, height, parent){
     jam.Sprite.call(this, x, y);
 
@@ -123,14 +123,15 @@ require(["jam", "../lib/sylvester"], function(jam, syl) {
       }
     }
   };
-
+  /**/
+  var shots = [];
   /**/
   window.setTimeout(function(){
     console.log = function(){
     };
   }, 8000);
   /**/
-
+  /** /
   node.prototype.calc = function(s){
     // Returns an array of nodes to collide s against, in case s called on a
     // boundry and overlaps multiple nodes.
@@ -151,7 +152,7 @@ require(["jam", "../lib/sylvester"], function(jam, syl) {
     }
     return ret;
   };
-
+  /**/
   var spawner = function(){
     this.children = [];
     var makeShot = function(x, y){
@@ -168,9 +169,9 @@ require(["jam", "../lib/sylvester"], function(jam, syl) {
 
     var p = new jam.Sprite(0, 0);
     p.setImage("ship.png");
-    scene.add(p);
+    //scene.add(p);
 
-    var qt = quadTree(640, 480);
+    var qt = new quadTree(640, 480);
 
     scene.add(qt);
 
