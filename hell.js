@@ -31,10 +31,20 @@ require(["jam", "../lib/sylvester"], function(jam, syl) {
     var h = Math.floor(this.height / 2);
 
     // Alg quads.
-    this.nodes.push(new node(this.x + w, this.y, w, h));
-    this.nodes.push(new node(this.x, this.y, w, h));
-    this.nodes.push(new node(this.x, this.y + h, w, h));
-    this.nodes.push(new node(this.x + w, this.y + h, w, h));
+    var n1 = new node(this.x + w, this.y, w, h);
+    var n2 = new node(this.x, this.y, w, h);
+    var n3 = new node(this.x, this.y + h, w, h);
+    var n4 = new node(this.x + w, this.y + h, w, h);
+
+    this.add(n1);
+    this.add(n2);
+    this.add(n3);
+    this.add(n4);
+
+    this.nodes.push(n1);
+    this.nodes.push(n2);
+    this.nodes.push(n3);
+    this.nodes.push(n4);
   };
 
   node.prototype.contains = function(){
@@ -55,6 +65,10 @@ require(["jam", "../lib/sylvester"], function(jam, syl) {
                     this.width, this.height);
     ctx.strokeStyle = "rgba(0,255,255,0.5)";
     ctx.strokeRect(this.x, this.y, this.width, this.height);
+
+	for (var i = 0; i < this.subSprites.length; ++i){
+	  this.subSprites[i].render(ctx);
+	}
   };
 
   node.prototype.flush = function(){
@@ -269,9 +283,9 @@ require(["jam", "../lib/sylvester"], function(jam, syl) {
     };
 
     makeShot(100, 100);
-    //makeShot(100, 90);
-    //makeShot(100, 80);
-    //makeShot(20, 20);
+    makeShot(100, 90);
+    makeShot(100, 80);
+    makeShot(20, 20);
 
     jam.Debug.showBoundingBoxes = true;
     if (jam.Debug.showBoundingBoxes === true){
