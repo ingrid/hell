@@ -1,125 +1,111 @@
-/*	SAMPLE USAGE:
+define(["vector", "sprite", "input", "util"], function(Vector, Sprite, Input, Util) {
+  var game = function(width, height, parentElement, zoom){
+	this._canvas = document.createElement("canvas");
+	// Style attributes for doing "pixel-zoom" (nearest neighbor).
+	this._canvas.setAttribute("style","image-rendering: -moz-crisp-edges; image-rendering: -o-crisp-edges; image-rendering:-webkit-optimize-contrast; -ms-interpolation-mode:nearest-neighbor;");
+	this._canvas.style.position = "relative";
+	this._canvas.style.border = "1px solid black";
+	this._context = this._canvas.getContext("2d");
+	this.hasFocus = false;
 
-** hello world game **
-window.onload = function(){
-	var game = jam.Game(640, 480, document.body);
+	zoom = zoom || 1;
 
-	var hello = jam.Text(320, 240);
-	hello.text = "hello world";
-	hello.color = "rgb(0,0,0)";
-	game.add(hello);
+	this.root = new Sprite(0,0);
+	this.root.scene = new Sprite(0, 0);
+	this.root.add(this.root.scene);
+	this.root.ui = new Sprite(0, 0);
+	this.root.add(this.root.ui);
 
-	game.run();
-}
+	if(parentElement === undefined) {
+	  parentElement = document.body;
+	}
 
-*/
-
-jam.Game = function(width, height, parentElement){
-	var self = {};
-
-	self._canvas = document.createElement("canvas");
-	self._canvas.style.position = "relative";
-	self._context = self._canvas.getContext("2d");
-	self._children = [];
-
-	jam.Game._canvas = self._canvas;
-
-	// List of objects to be removed
-	self._remove = [];
+	this.width = width;
+	this.height = height;
+	this._canvas.width = width;
+	this._canvas.height = height;
+	this._context.width = this.width;
+	this._context.height = this.height;
+	this.zoom = zoom;
 
 	// Always keep the canvas in the middle of the parent element
-	onresize = function(){
-		self._canvas.style.left = (parentElement.clientWidth / 2 - width / 2) +"px";
-		self._canvas.style.top = (parentElement.clientHeight / 2 - height / 2) + "px";
-	}
+	var onresize = function(){
+	  this._canvas.style.left = (parentElement.clientWidth / 2 - (this.width * this.zoom) / 2) + "px";
+	  this._canvas.style.top = (parentElement.clientHeight / 2 - (this.height * this.zoom) / 2) + "px";
+	  this._canvas.style.width = (this.width * this.zoom) + "px";
+	  this._canvas.style.height = (this.height * this.zoom) + "px";
+	}.bind(this);
 	onresize();
 	parentElement.onresize = onresize;
 
+	// Timing
+	this.fps = 50;
+	this.elapsed = 0;	// Time since the last frame in seconds
+	this.time = 0;
+	this.lastFrameTime = new Date().getTime();
 
-	self.width = width;
-	self.height = height;
-	self.fps = 50;		// Frequency
-	self.elapsed = 0; 	// Period
-	self.time = 0;
-	self.camera = {
-		scroll:jam.Vector(0,0),
-		size:jam.Vector(self.width, self.height),
-		follow:null,
-	};
-	self.bgColor = "rgb(255,255,255)";
+	this.bgColor = "rgb(255,255,255)";
 
 	// If they didn't supply this argument, assume the doc body
 	// as the parent element for the canvas
 	if(parentElement === undefined || parentElement === null){
-		parentElement = document.body;
+	  parentElement = document.body;
 	}
-	parentElement.appendChild(self._canvas);
+	parentElement.appendChild(this._canvas);
 
-	self._canvas.width = self.width;
-	self._canvas.height = self.height
+	this._tick = function(){
+	  this.update();
+	  this.render();
+	  window.setTimeout(this._tick, 1000.0/this.fps);
+    }.bind(this);
 
-	self._tick = function(){
-		self.update();
-		self.render();
-		window.setTimeout(self._tick, 1000.0/self.fps);
-	};
+	Util.mixinOn(this);
+  };
 
-	// Called every frame. Most importantly, calls update on each child
-	// Additionally, clears out removed elements and updates the camera
-	self.update = function(){
-		// This filter just says "only leave me if i'm not in the remove list"
-		self._children = self._children.filter(function(x,i,a){ return self._remove.indexOf(x) === -1 });
-		self._remove = [];
+  // Called every frame to do all logic unrelated to rendering. Calls
+  // update on the root sprite which will recursively call update on its
+  // children.
+  game.prototype.update = function(){
+	var currentTime = new Date().getTime();
+	var startTime = this.lastFrameTime;
+	this.elapsed = (currentTime - this.lastFrameTime) / 1000.0;
+	this.lastFrameTime = currentTime;
 
-		self.elapsed = 1.0/self.fps;
-		self.time += self.elapsed;
+	this.time = (currentTime - startTime) / 1000.0;
 
-		// Simplest possible follow code
-		if(self.camera.follow !== null)
-		{
-			self.camera.scroll.x = self.camera.follow.x - self.width / 2;
-			self.camera.scroll.y = self.camera.follow.y - self.height / 2;
-		}
-
-		// Call update on each child and pass it the elapsed time
-		for (var i = self._children.length-1; i >= 0; --i)
-		{
-			self._children[i].update(self.elapsed);
-		}
-	};
-
-	// Called every frame. Clears the screen then calls render on each child.
-	self.render = function(){
-		var ctx = self._context;
-		ctx.fillStyle = self.bgColor;
-		ctx.fillRect(0,0,self.width,self.height);
-		for (var i = self._children.length-1; i >= 0; --i)
-		{
-			self._children[i].render(ctx, self.camera);
-		}
-	};
-
-	self.add = function(sprite){
-		self._children.push(sprite);
-		sprite._game = self;
-		self.sortSprites();	// Sort to figure out layering
-	};
-
-	self.remove = function(sprite){
-		if(self._remove.indexOf(sprite) === -1)
-		{
-			self._remove.push(sprite);
-			sprite._game = null;
-		}
-	};
-
-	self.run = function(){
-		self._tick();
-	};
-
-	self.sortSprites = function(){
-		self._children.sort(function(a,b){ return b._layer - a._layer; });
+	if(this.hasFocus) {
+	  this.root.update(this.elapsed);
+	  Input.update(this);
 	}
+  };
 
-	return self;
-};
+  // Called every frame. Clears the screen, then does a recursive render
+  // call on the root sprite. This will call render on its children and
+  // so on.
+  game.prototype.render = function(){
+	var ctx = this._context;
+	ctx.save();
+	ctx.fillStyle = this.bgColor;
+	ctx.fillRect(0,0,this.width,this.height);
+
+	this.root.render(ctx);
+	ctx.restore();
+  };
+
+  game.prototype.run = function(){
+	this._tick();
+	Input.registerGame(this);
+  };
+
+  game.prototype.gainFocus = function() {
+	this._canvas.style.outline = "2px solid #888";
+	this.hasFocus = true;
+  };
+
+  game.prototype.loseFocus = function() {
+	this._canvas.style.outline = "";
+	this.hasFocus = false;
+  };
+
+  return game;
+});

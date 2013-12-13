@@ -1,68 +1,45 @@
-// Simple Vector library. There's no such thing as operator overloading
-// in javascript, so there's a bunch of "static" functions for vector ops.
+define([], function() {
+  var vector = function(x, y) {
+	this.x = x;
+	this.y = y;
+  };
 
+  // Returns a nice string representation of the vector.
+  vector.prototype.toString = function() { return "<" + this.x + ", " + this.y + ">"; };
 
-/*	SAMPLE USAGE:
+  // Gets the length of the vector.
+  vector.prototype.getLength = function() { return Math.sqrt(this.x*this.x+this.y*this.y); };
 
-** Distance between two sprites **
-var a = jam.Vector(player.x, player.y);
-var b = jam.Vector(enemy.x, enemy.y);
-var offset = jam.Vector.sub(a,b);	// Vector between the objects
-var distance = offset.getLength();
+  // Gets the squared length of the vector. This avoids expensive square root
+  // and should be used for comparisons (squaring both sides of the equation).
+  vector.prototype.getLengthSq = function() { return this.x*this.x+this.y*this.y; };
 
+  vector.prototype.equals = function(v) { return this.x === v.x && this.y === v.y; };
 
-** Move towards a point **
-// Using the stuff from the above example
+  // Adds a vector to a vector
+  vector.add = function(v1, v2){
+	return new vector(v1.x + v2.x, v1.y + v2.y);
+  };
 
-// Make a unit vector by dividing x and y by the length
-var direction = jam.Vector(offset.x / distance, offset.y / distance);
+  // Subtracts vector 2 from vector 1
+  vector.sub = function(v1, v2){
+	return new vector(v1.x - v2.x, v1.y - v2.y);
+  };
 
-player.velocity = jam.Vector.mul(direction, 80);
+  // Multiplies a vector by a scalar
+  vector.mul = function(v, s){
+	return new vector(v.x * s, v.y * s);
+  };
 
-*/
+  // Divides a vector by a scalar
+  vector.div = function(v, s){
+	return new vector(v.x / s, v.y / s);
+  };
 
-jam.Vector = function(x, y){
-	var self = {};
-	self.x = x;
-	self.y = y;
-	
-	// Returns a nice string representation of the vector
-	self.toString = function() { return "<" + self.x + ", " + self.y + ">"; };
-	
-	// Gets the length of the vector
-	self.getLength = function() { return Math.sqrt(self.x*self.x+self.y*self.y); }
-	
-	// Gets the squared length of the vector. This avoids expensive square root
-	// and should be used for comparisons (squaring both sides of the equation)
-	self.getLengthSq = function() { return self.x*self.x+self.y*self.y; }
-	
-	self.equals = function(v) { return self.x == v.x && self.y == v.y; }
-	
-	return self;
-}
-
-
-// Adds a vector to a vector
-jam.Vector.add = function(v1, v2){
-	return jam.Vector(v1.x + v2.x, v1.y + v2.y)
-}
-
-// Subtracts vector 2 from vector 1
-jam.Vector.sub = function(v1, v2){
-	return jam.Vector(v1.x - v2.x, v1.y - v2.y);
-}
-
-// Multiplies a vector by a scalar
-jam.Vector.mul = function(v, s){
-	return jam.Vector(v.x * s, v.y * s);
-}
-
-// Divides a vector by a scalar
-jam.Vector.div = function(v, s){
-	return jam.Vector(v.x / s, v.y / s);
-}
-
-// returns true if the components of the vectors are equal
-jam.Vector.compare = function(v1, v2){
+  // returns true if the components of the vectors are equal
+  vector.compare = function(v1, v2){
 	return v1.x == v2.x && v1.y == v2.y;
-}
+  };
+
+  return vector;
+});
