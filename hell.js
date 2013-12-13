@@ -9,6 +9,8 @@ require(["jam", "../lib/sylvester"], function(jam, syl) {
   var scene;
 
   var node = function(x, y, width, height, parent){
+    jam.Sprite.call(this, x, y);
+
     this.x = x;
     this.y = y;
     this.width = width;
@@ -20,9 +22,10 @@ require(["jam", "../lib/sylvester"], function(jam, syl) {
     this._collisionOffsetHeight = 0;
     this.nodes = [];
     this.children = [];
-    scene.add(this);
+    // scene.add(this);
   };
 
+  node.prototype = new jam.Sprite(0, 0);
   node.prototype.split = function(){
     var w = Math.floor(this.width / 2);
     var h = Math.floor(this.height / 2);
@@ -117,7 +120,7 @@ require(["jam", "../lib/sylvester"], function(jam, syl) {
   node.prototype.calc = function(s){
     // Returns an array of nodes to collide s against, in case s called on a
     // boundry and overlaps multiple nodes.
-    if (!jam.Rect.collide([this], [s])){
+    if (!jam.Rect.overlap([this], [s])){
       return [];
     }
 
@@ -226,10 +229,13 @@ require(["jam", "../lib/sylvester"], function(jam, syl) {
       qt.build();
       var pcolls = qt.calc(p);
       for (c in pcolls){
-        if (p.overlaps(pcolls[c])){
+        //if (p.overlaps(pcolls[c])){
+        if (jam.Rect.overlap([p], pcolls[c])){
           p.hit(1);
           scene.remove(pcolls[c]);
           shots.splice(shots.indexOf(pcolls[c]), 1);
+        } else {
+            // console.log('???');
         }
       }
       p.velocity.x = 0;
@@ -263,9 +269,9 @@ require(["jam", "../lib/sylvester"], function(jam, syl) {
     };
 
     makeShot(100, 100);
-    makeShot(100, 90);
-    makeShot(100, 80);
-    makeShot(20, 20);
+    //makeShot(100, 90);
+    //makeShot(100, 80);
+    //makeShot(20, 20);
 
     jam.Debug.showBoundingBoxes = true;
     if (jam.Debug.showBoundingBoxes === true){
